@@ -1,9 +1,11 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 
 import '../../../network/api.dart';
 
 class TodoList extends StatefulWidget {
-  const TodoList({Key? key}) : super(key: key);
+  const TodoList({super.key});
 
   @override
   State<TodoList> createState() => _TodoListState();
@@ -19,7 +21,7 @@ class _TodoListState extends State<TodoList> {
     _fetchTodos();
   }
 
-// GET fuction
+//*GET fuction
   Future<void> _fetchTodos() async {
     try {
       final todos = await _todoService.getTodos();
@@ -31,7 +33,7 @@ class _TodoListState extends State<TodoList> {
     }
   }
 
-  // Delete Function
+  //*Delete Function
   Future<void> _deleteTodo(int id) async {
     try {
       await _todoService.deleteTodo(id);
@@ -39,47 +41,6 @@ class _TodoListState extends State<TodoList> {
     } catch (e) {
       print(e);
     }
-  }
-
-  void _showEditDialog(int id, String currentTodo) {
-    final todoTextController = TextEditingController(text: currentTodo);
-
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Edit Todo'),
-            content: TextField(
-              controller: todoTextController,
-              decoration: const InputDecoration(
-                hintText: "Edit Todo",
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final editedTodo = todoTextController.text.trim();
-                  if (editedTodo.isNotEmpty) {
-                    await _todoService.updateTodo(id, editedTodo);
-                    _fetchTodos();
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter a todo text'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Update'),
-              ),
-            ],
-          );
-        });
   }
 
   @override
@@ -107,5 +68,53 @@ class _TodoListState extends State<TodoList> {
                 ),
               );
             }));
+  }
+
+  void _showEditDialog(int id, String currentTodo) {
+    final todoTextController = TextEditingController(text: currentTodo);
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Edit Todo'),
+            content: TextField(
+              controller: todoTextController,
+              decoration: const InputDecoration(
+                hintText: "Edit Todo",
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final editedTodo = todoTextController.text.trim();
+                  if (editedTodo.isNotEmpty) {
+                    try {
+                      await _todoService.updateTodo(id, editedTodo);
+                      await _fetchTodos(); // Fetch updated todos after updating
+                      Navigator.pop(context);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to update todo: $e'),
+                        ),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a todo text'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Update'),
+              ),
+            ],
+          );
+        });
   }
 }
